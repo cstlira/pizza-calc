@@ -20,6 +20,17 @@ export interface CalculatorFormProps {
   computedFermentationHours: number | null;
 }
 
+/** Formata uma Date no formato que <input type="datetime-local"> espera, em horário local (não UTC). */
+function toDatetimeLocalValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
 /**
  * Campos numéricos de texto livre podem ser esvaziados ou zerados pelo
  * usuário mesmo com `min` no input (o atributo não bloqueia digitação) —
@@ -346,12 +357,21 @@ export function CalculatorForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className={FIELD_WRAPPER}>
             <span className={LABEL}>Quando quer começar?</span>
-            <input
-              className={NUMBER_INPUT}
-              type="datetime-local"
-              value={desiredStartAt}
-              onChange={(e) => onDesiredStartAtChange(e.target.value)}
-            />
+            <div className="flex gap-2">
+              <input
+                className={NUMBER_INPUT.replace('w-full', 'min-w-0 flex-1')}
+                type="datetime-local"
+                value={desiredStartAt}
+                onChange={(e) => onDesiredStartAtChange(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => onDesiredStartAtChange(toDatetimeLocalValue(new Date()))}
+                className="shrink-0 rounded-sm border border-crust-brown/60 px-3 py-2 text-xs font-semibold uppercase tracking-widest text-flour-dust/70 transition-colors hover:border-semola-gold hover:text-semola-gold focus:outline-none focus:border-semola-gold focus:ring-1 focus:ring-semola-gold"
+              >
+                Agora
+              </button>
+            </div>
             <p className={HINT}>opcional — junto com “servir quando”, calcula o tempo de fermentação</p>
           </label>
 
