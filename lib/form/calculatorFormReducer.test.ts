@@ -99,10 +99,13 @@ describe('calculatorFormReducer', () => {
       expect(next.coldRetardHours).toBe(0);
     });
 
-    it('clampa valores acima de fermentationHours pro próprio fermentationHours', () => {
+    it('não clampa contra fermentationHours — o teto é responsabilidade de quem despacha (form) e de calculateRecipe', () => {
+      // Motivo: quando início+servir calculam o tempo de fermentação
+      // efetivo, state.fermentationHours (o campo manual) fica desatualizado
+      // e não é mais o teto correto. Ver CalculatorForm.tsx.
       const state = createInitialState(); // fermentationHours: 24
       const next = calculatorFormReducer(state, { type: 'SET_COLD_RETARD_HOURS', coldRetardHours: 100 });
-      expect(next.coldRetardHours).toBe(24);
+      expect(next.coldRetardHours).toBe(100);
     });
   });
 

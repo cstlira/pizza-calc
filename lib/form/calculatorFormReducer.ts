@@ -69,7 +69,13 @@ export function calculatorFormReducer(
       return { ...state, fermentationHours, coldRetardHours };
     }
     case 'SET_COLD_RETARD_HOURS': {
-      const coldRetardHours = Math.min(Math.max(action.coldRetardHours, 0), state.fermentationHours);
+      // Só limita embaixo (>=0) — o teto correto depende de qual "tempo
+      // total" está de fato em vigor (o campo manual OU o calculado a partir
+      // de início+servir, ver CalculatorForm/page.tsx), e o reducer não tem
+      // acesso a essa segunda fonte. O form já clampa contra o teto certo
+      // antes de despachar, e calculateRecipe reclampa defensivamente na
+      // ponta do cálculo de qualquer forma.
+      const coldRetardHours = Math.max(action.coldRetardHours, 0);
       return { ...state, coldRetardHours };
     }
     case 'SET_FRIDGE_TEMP':

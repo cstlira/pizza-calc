@@ -5,13 +5,19 @@ import type { CalculatorFormAction, CalculatorFormState } from '@/lib/form/calcu
 import type { DesiredOutcome, PizzaStyle, PrefermentMethod, YeastType } from '@/lib/calculations/types';
 import { HYDRATION_SLIDER_RANGE, SALT_PRESETS, STYLE_DEFAULTS } from '@/lib/presets/styleDefaults';
 import { METHOD_JUSTIFICATION } from '@/lib/presets/outcomeSuggestions';
+import { formatHoursMinutes } from '@/lib/format/duration';
 
 export interface CalculatorFormProps {
   state: CalculatorFormState;
   dispatch: Dispatch<CalculatorFormAction>;
+  /** Horário desejado pra começar a receita, formato datetime-local ("" = não definido). Junto com desiredServeAt, substitui o "Tempo de fermentação (h)" digitado por um valor calculado — ver app/page.tsx. Fora do reducer pelo mesmo motivo de desiredServeAt. */
+  desiredStartAt: string;
+  onDesiredStartAtChange: (value: string) => void;
   /** Horário desejado pra servir, formato datetime-local ("" = não definido). Não faz parte de CalculatorInput — é puramente de exibição (ver lib/calculations/schedule.ts), então fica fora do reducer. */
   desiredServeAt: string;
   onDesiredServeAtChange: (value: string) => void;
+  /** Calculado em app/page.tsx a partir de desiredStartAt/desiredServeAt; null quando um dos dois falta ou o intervalo é inválido (início não antes de servir). */
+  computedFermentationHours: number | null;
 }
 
 /**
@@ -79,12 +85,24 @@ const NOTE = 'mt-1.5 text-xs italic text-flour-dust/70';
 const WARNING_NOTE = 'mt-1.5 text-xs text-semola-gold';
 const FIELDSET = 'mb-8 border-t border-crust-brown/40 pt-5';
 
-export function CalculatorForm({ state, dispatch, desiredServeAt, onDesiredServeAtChange }: CalculatorFormProps) {
+export function CalculatorForm({
+  state,
+  dispatch,
+  desiredStartAt,
+  onDesiredStartAtChange,
+  desiredServeAt,
+  onDesiredServeAtChange,
+  computedFermentationHours,
+}: CalculatorFormProps) {
   const styleDefaults = STYLE_DEFAULTS[state.pizzaStyle];
   const [hydrationMin, hydrationMax] = HYDRATION_SLIDER_RANGE;
   const isHydrationOutsideStyle =
     state.hydrationPercent < styleDefaults.hydrationRange[0] ||
     state.hydrationPercent > styleDefaults.hydrationRange[1];
+
+  const hasFermentationDateRangeError =
+    desiredStartAt !== '' && desiredServeAt !== '' && computedFermentationHours === null;
+  const effectiveFermentationHours = computedFermentationHours ?? state.fermentationHours;
 
   return (
     <form aria-label="Calculadora de massa de pizza" className="font-sans">
@@ -196,10 +214,15 @@ export function CalculatorForm({ state, dispatch, desiredServeAt, onDesiredServe
           <label className={FIELD_WRAPPER}>
             <span className={LABEL}>Tempo de fermentação (h)</span>
             <input
-              className={NUMBER_INPUT}
+              className={`${NUMBER_INPUT} ${computedFermentationHours !== null ? 'opacity-60' : ''}`}
               type="number"
               min={1}
-              value={state.fermentationHours}
+              disabled={computedFermentationHours !== null}
+              value={
+                computedFermentationHours !== null
+                  ? Math.round(computedFermentationHours * 10) / 10
+                  : state.fermentationHours
+              }
               onChange={(e) =>
                 dispatch({
                   type: 'SET_FERMENTATION_HOURS',
@@ -207,6 +230,11 @@ export function CalculatorForm({ state, dispatch, desiredServeAt, onDesiredServe
                 })
               }
             />
+            <p className={HINT}>
+              {computedFermentationHours !== null
+                ? `calculado: ${formatHoursMinutes(computedFermentationHours)} (a partir do início e do horário de servir)`
+                : 'ou informe início + horário de servir abaixo'}
+            </p>
           </label>
         </div>
 
@@ -217,12 +245,12 @@ export function CalculatorForm({ state, dispatch, desiredServeAt, onDesiredServe
               className={NUMBER_INPUT}
               type="number"
               min={0}
-              max={state.fermentationHours}
+              max={effectiveFermentationHours}
               value={state.coldRetardHours}
               onChange={(e) =>
                 dispatch({
                   type: 'SET_COLD_RETARD_HOURS',
-                  coldRetardHours: toClampedNumber(e.target.value, 0, state.fermentationHours),
+                  coldRetardHours: toClampedNumber(e.target.value, 0, effectiveFermentationHours),
                 })
               }
             />
@@ -315,16 +343,36 @@ export function CalculatorForm({ state, dispatch, desiredServeAt, onDesiredServe
 
       <fieldset className={FIELDSET}>
         <legend className={LEGEND}>Horário</legend>
-        <label className={FIELD_WRAPPER}>
-          <span className={LABEL}>Quer servir quando?</span>
-          <input
-            className={NUMBER_INPUT}
-            type="datetime-local"
-            value={desiredServeAt}
-            onChange={(e) => onDesiredServeAtChange(e.target.value)}
-          />
-          <p className={HINT}>opcional — mostra o horário exato de cada etapa e quando começar</p>
-        </label>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <label className={FIELD_WRAPPER}>
+            <span className={LABEL}>Quando quer começar?</span>
+            <input
+              className={NUMBER_INPUT}
+              type="datetime-local"
+              value={desiredStartAt}
+              onChange={(e) => onDesiredStartAtChange(e.target.value)}
+            />
+            <p className={HINT}>opcional — junto com “servir quando”, calcula o tempo de fermentação</p>
+          </label>
+
+          <label className={FIELD_WRAPPER}>
+            <span className={LABEL}>Quer servir quando?</span>
+            <input
+              className={NUMBER_INPUT}
+              type="datetime-local"
+              value={desiredServeAt}
+              onChange={(e) => onDesiredServeAtChange(e.target.value)}
+            />
+            <p className={HINT}>opcional — mostra o horário exato de cada etapa</p>
+          </label>
+        </div>
+
+        {hasFermentationDateRangeError && (
+          <p role="note" className={WARNING_NOTE}>
+            O início precisa ser antes do horário de servir — ajuste as datas pra eu calcular o tempo de
+            fermentação. Por enquanto, “Tempo de fermentação (h)” continua manual.
+          </p>
+        )}
       </fieldset>
     </form>
   );

@@ -7,16 +7,40 @@ import { calculateRecipe } from '@/lib/calculations/calculateRecipe';
 import { buildSchedule } from '@/lib/calculations/schedule';
 import { calculatorFormReducer, createInitialState } from '@/lib/form/calculatorFormReducer';
 
+function parseDateInput(value: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export default function Home() {
   const [state, dispatch] = useReducer(calculatorFormReducer, undefined, createInitialState);
+  const [desiredStartAt, setDesiredStartAt] = useState('');
   const [desiredServeAt, setDesiredServeAt] = useState('');
-  const output = useMemo(() => calculateRecipe(state), [state]);
+
+  // Quando início E servir estão preenchidos e em ordem válida, o tempo de
+  // fermentação passa a ser CALCULADO a partir da diferença entre os dois —
+  // substitui o valor digitado manualmente em "Tempo de fermentação (h)"
+  // (ver CalculatorForm, que desabilita esse campo nesse caso).
+  const computedFermentationHours = useMemo(() => {
+    const start = parseDateInput(desiredStartAt);
+    const serve = parseDateInput(desiredServeAt);
+    if (!start || !serve) return null;
+    const hours = (serve.getTime() - start.getTime()) / (1000 * 60 * 60);
+    return hours > 0 ? hours : null;
+  }, [desiredStartAt, desiredServeAt]);
+
+  const effectiveInput = useMemo(
+    () => (computedFermentationHours === null ? state : { ...state, fermentationHours: computedFermentationHours }),
+    [state, computedFermentationHours]
+  );
+
+  const output = useMemo(() => calculateRecipe(effectiveInput), [effectiveInput]);
 
   const schedule = useMemo(() => {
-    if (!desiredServeAt) return null;
-    const date = new Date(desiredServeAt);
-    if (Number.isNaN(date.getTime())) return null;
-    return buildSchedule(output.timeline, date);
+    const serve = parseDateInput(desiredServeAt);
+    if (!serve) return null;
+    return buildSchedule(output.timeline, serve);
   }, [output.timeline, desiredServeAt]);
 
   return (
@@ -30,8 +54,11 @@ export default function Home() {
           <CalculatorForm
             state={state}
             dispatch={dispatch}
+            desiredStartAt={desiredStartAt}
+            onDesiredStartAtChange={setDesiredStartAt}
             desiredServeAt={desiredServeAt}
             onDesiredServeAtChange={setDesiredServeAt}
+            computedFermentationHours={computedFermentationHours}
           />
         </div>
         <div className="lg:sticky lg:top-8">

@@ -1,5 +1,6 @@
 import type { CalculatorOutput, DoughComponent, TimelineStep } from '@/lib/calculations/types';
 import type { Schedule } from '@/lib/calculations/schedule';
+import { formatHoursMinutes } from './duration';
 
 /** Mesma lógica de RecipeTicket.tsx — arredonda pra 1 casa decimal, "—" se undefined. */
 function formatGrams(value: number | undefined): string {
@@ -14,17 +15,6 @@ function formatPercent(value: number): string {
 /** Mesma lógica de RecipeTicket.tsx (formatHydration). */
 function formatHydration(component: DoughComponent): string {
   return `${Math.round((component.waterG / component.flourG) * 100)}%`;
-}
-
-/** Mesma lógica de RecipeTicket.tsx (formatHoursMinutes) — arredonda pro
- * múltiplo de 10 minutos mais próximo, carregando a hora quando passa de 60. */
-function formatHoursMinutes(value: number): string {
-  const totalMinutes = Math.round((value * 60) / 10) * 10;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  if (hours === 0) return `${minutes}min`;
-  if (minutes === 0) return `${hours}h`;
-  return `${hours}h${minutes}min`;
 }
 
 const dateTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
