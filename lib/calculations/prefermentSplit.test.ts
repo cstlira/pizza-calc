@@ -10,8 +10,8 @@ describe('getPrefermentFlourPercents', () => {
     expect(getPrefermentFlourPercents('biga')).toEqual({ biga: 60, poolish: 0 });
   });
 
-  it('poolish: 40% default, biga 0%', () => {
-    expect(getPrefermentFlourPercents('poolish')).toEqual({ biga: 0, poolish: 40 });
+  it('poolish: 30% default, biga 0%', () => {
+    expect(getPrefermentFlourPercents('poolish')).toEqual({ biga: 0, poolish: 30 });
   });
 
   it('combined: soma (60+40=100%) dividida 50/50', () => {
@@ -52,7 +52,7 @@ describe('splitPreferments', () => {
     expect(result.finalDough.yeastG).toBeCloseTo(0.8, 6);
   });
 
-  it('poolish: separa 40% da farinha a 100% de hidratação', () => {
+  it('poolish: separa 30% da farinha a 100% de hidratação', () => {
     const result = splitPreferments({
       method: 'poolish',
       totalFlourG: 1000,
@@ -60,9 +60,9 @@ describe('splitPreferments', () => {
       totalYeastG: 2,
     });
 
-    expect(result.poolish!.flourG).toBeCloseTo(400, 6);
-    expect(result.poolish!.waterG).toBeCloseTo(400, 6);
-    expect(result.poolish!.yeastG).toBeCloseTo(0.8, 6);
+    expect(result.poolish!.flourG).toBeCloseTo(300, 6);
+    expect(result.poolish!.waterG).toBeCloseTo(300, 6);
+    expect(result.poolish!.yeastG).toBeCloseTo(0.6, 6);
   });
 
   it('combined: biga e poolish somam 100% da farinha, nada sobra pra massa final', () => {

@@ -2,19 +2,22 @@ import type { DoughComponent, PrefermentMethod } from './types';
 
 export const PREFERMENT_DEFAULTS = {
   biga: { flourPercentOfTotal: 60, hydrationPercent: 48 },
-  poolish: { flourPercentOfTotal: 40, hydrationPercent: 100 },
+  // 30% quando poolish é usado sozinho (extremo baixo da faixa 30-50% do
+  // plano). Independente do split do método "combined" abaixo — mudar este
+  // valor não afeta o "combined".
+  poolish: { flourPercentOfTotal: 30, hydrationPercent: 100 },
 } as const;
+
+// "combined" usa sua própria soma histórica (60% biga + 40% poolish = 100%
+// da farinha), dividida 50/50 — não deriva de PREFERMENT_DEFAULTS.poolish,
+// que agora é específico do método "poolish" sozinho.
+const COMBINED_FLOUR_PERCENT_EACH = 50;
 
 export interface PrefermentFlourPercents {
   biga: number;
   poolish: number;
 }
 
-/**
- * "combined" usa a soma dos dois defaults (60% + 40% = 100% da farinha),
- * dividida 50/50 entre biga e poolish — ou seja, toda a farinha passa por
- * um dos dois pré-fermentos, sem farinha adicional na mistura final.
- */
 export function getPrefermentFlourPercents(
   method: Exclude<PrefermentMethod, 'auto'>
 ): PrefermentFlourPercents {
@@ -25,11 +28,8 @@ export function getPrefermentFlourPercents(
       return { biga: PREFERMENT_DEFAULTS.biga.flourPercentOfTotal, poolish: 0 };
     case 'poolish':
       return { biga: 0, poolish: PREFERMENT_DEFAULTS.poolish.flourPercentOfTotal };
-    case 'combined': {
-      const combinedTotal =
-        PREFERMENT_DEFAULTS.biga.flourPercentOfTotal + PREFERMENT_DEFAULTS.poolish.flourPercentOfTotal;
-      return { biga: combinedTotal / 2, poolish: combinedTotal / 2 };
-    }
+    case 'combined':
+      return { biga: COMBINED_FLOUR_PERCENT_EACH, poolish: COMBINED_FLOUR_PERCENT_EACH };
   }
 }
 
