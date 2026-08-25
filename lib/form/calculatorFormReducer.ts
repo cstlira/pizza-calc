@@ -23,7 +23,7 @@ export function createInitialState(pizzaStyle: PizzaStyle = 'neapolitan'): Calcu
     fermentationHours: 24,
     coldRetardHours: 0,
     fridgeTempC: 4,
-    yeastType: 'dry',
+    yeastType: 'instant',
     prefermentMethod: 'direct',
     desiredOutcome: undefined,
   };
