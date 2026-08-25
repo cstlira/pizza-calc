@@ -114,6 +114,7 @@ export function CalculatorForm({
   const hasFermentationDateRangeError =
     desiredStartAt !== '' && desiredServeAt !== '' && computedFermentationHours === null;
   const effectiveFermentationHours = computedFermentationHours ?? state.fermentationHours;
+  const roomHours = effectiveFermentationHours - state.coldRetardHours;
 
   return (
     <form aria-label="Calculadora de massa de pizza" className="font-sans">
@@ -252,6 +253,29 @@ export function CalculatorForm({
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className={FIELD_WRAPPER}>
             <span className={LABEL}>
+              Fermentação em temperatura ambiente{' '}
+              <span className="font-data text-flour-dust">{formatHoursMinutes(roomHours)}</span>
+            </span>
+            <input
+              className="w-full accent-san-marzano"
+              type="range"
+              min={0}
+              max={effectiveFermentationHours}
+              step={0.5}
+              value={roomHours}
+              onChange={(e) => {
+                const newRoomHours = toClampedNumber(e.target.value, 0, effectiveFermentationHours);
+                dispatch({
+                  type: 'SET_COLD_RETARD_HOURS',
+                  coldRetardHours: effectiveFermentationHours - newRoomHours,
+                });
+              }}
+            />
+            <p className={HINT}>bulk + descanso de bancada, fora da geladeira</p>
+          </label>
+
+          <label className={FIELD_WRAPPER}>
+            <span className={LABEL}>
               Retard na geladeira{' '}
               <span className="font-data text-flour-dust">{formatHoursMinutes(state.coldRetardHours)}</span>
             </span>
@@ -271,18 +295,20 @@ export function CalculatorForm({
             />
             <p className={HINT}>0 = sem retard na geladeira</p>
           </label>
-
-          <label className={`${FIELD_WRAPPER} ${state.coldRetardHours === 0 ? 'opacity-50' : ''}`}>
-            <span className={LABEL}>Temperatura da geladeira (°C)</span>
-            <input
-              className={NUMBER_INPUT}
-              type="number"
-              value={state.fridgeTempC}
-              onChange={(e) => dispatch({ type: 'SET_FRIDGE_TEMP', fridgeTempC: Number(e.target.value) })}
-            />
-            <p className={HINT}>geladeira doméstica típica: 2–6°C</p>
-          </label>
         </div>
+
+        <label
+          className={`${FIELD_WRAPPER} mt-4 ${state.coldRetardHours === 0 ? 'opacity-50' : ''}`}
+        >
+          <span className={LABEL}>Temperatura da geladeira (°C)</span>
+          <input
+            className={NUMBER_INPUT}
+            type="number"
+            value={state.fridgeTempC}
+            onChange={(e) => dispatch({ type: 'SET_FRIDGE_TEMP', fridgeTempC: Number(e.target.value) })}
+          />
+          <p className={HINT}>geladeira doméstica típica: 2–6°C</p>
+        </label>
 
         <label className={`${FIELD_WRAPPER} mt-4`}>
           <span className={LABEL}>Tipo de fermento</span>
