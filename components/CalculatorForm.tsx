@@ -251,12 +251,16 @@ export function CalculatorForm({
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <label className={FIELD_WRAPPER}>
-            <span className={LABEL}>Retard na geladeira (h)</span>
+            <span className={LABEL}>
+              Retard na geladeira{' '}
+              <span className="font-data text-flour-dust">{formatHoursMinutes(state.coldRetardHours)}</span>
+            </span>
             <input
-              className={NUMBER_INPUT}
-              type="number"
+              className="w-full accent-san-marzano"
+              type="range"
               min={0}
               max={effectiveFermentationHours}
+              step={0.5}
               value={state.coldRetardHours}
               onChange={(e) =>
                 dispatch({
