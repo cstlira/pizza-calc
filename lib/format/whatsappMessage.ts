@@ -1,5 +1,6 @@
 import type { CalculatorOutput, DoughComponent, TimelineStep } from '@/lib/calculations/types';
 import type { Schedule } from '@/lib/calculations/schedule';
+import { roundTimelineForDisplay } from '@/lib/calculations/timelineRounding';
 import { formatHoursMinutes } from './duration';
 
 /** Mesma lógica de RecipeTicket.tsx — arredonda pra 1 casa decimal, "—" se undefined. */
@@ -143,7 +144,11 @@ export function buildWhatsAppMessage(output: CalculatorOutput, schedule?: Schedu
 
   lines.push('');
   lines.push('*Cronograma*');
-  output.timeline.forEach((step, index) => {
+  // Arredondado pro múltiplo de 10 minutos mais próximo — mesma lógica de
+  // RecipeTicket.tsx, garante que os horários e as durações mostradas
+  // batem entre si (ver roundTimelineForDisplay).
+  const displayTimeline = roundTimelineForDisplay(output.timeline);
+  displayTimeline.forEach((step, index) => {
     const at = schedule?.steps[index]?.at;
     lines.push(timelineLine(step, index, at));
   });

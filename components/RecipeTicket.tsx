@@ -1,5 +1,6 @@
 import type { CalculatorOutput, DoughComponent, TimelineStep } from '@/lib/calculations/types';
 import type { Schedule } from '@/lib/calculations/schedule';
+import { roundTimelineForDisplay } from '@/lib/calculations/timelineRounding';
 import { buildWhatsAppMessage } from '@/lib/format/whatsappMessage';
 import { formatHoursMinutes } from '@/lib/format/duration';
 import { FermentationCurve } from './FermentationCurve';
@@ -123,6 +124,9 @@ function WhatsAppIcon({ className }: { className?: string }) {
 export function RecipeTicket({ output, schedule }: RecipeTicketProps) {
   const { biga, poolish, naturalStarter } = output.preferments;
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(buildWhatsAppMessage(output, schedule))}`;
+  // Arredondado separadamente do timeline "cru" usado na curva ilustrativa —
+  // ver comentário em roundTimelineForDisplay.
+  const displayTimeline = roundTimelineForDisplay(output.timeline);
 
   return (
     <section
@@ -198,7 +202,7 @@ export function RecipeTicket({ output, schedule }: RecipeTicketProps) {
       <DoughComponentTable component={output.finalDough} totalFlourG={output.totals.flourG} />
 
       <h3 className={SECTION_HEADING}>Cronograma</h3>
-      <TimelineList timeline={output.timeline} schedule={schedule} />
+      <TimelineList timeline={displayTimeline} schedule={schedule} />
 
       {output.warnings.length > 0 && (
         <>

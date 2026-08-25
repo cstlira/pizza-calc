@@ -5,6 +5,7 @@ import { CalculatorForm } from '@/components/CalculatorForm';
 import { RecipeTicket } from '@/components/RecipeTicket';
 import { calculateRecipe } from '@/lib/calculations/calculateRecipe';
 import { buildSchedule } from '@/lib/calculations/schedule';
+import { roundTimelineForDisplay } from '@/lib/calculations/timelineRounding';
 import { calculatorFormReducer, createInitialState } from '@/lib/form/calculatorFormReducer';
 
 function parseDateInput(value: string): Date | null {
@@ -40,7 +41,11 @@ export default function Home() {
   const schedule = useMemo(() => {
     const serve = parseDateInput(desiredServeAt);
     if (!serve) return null;
-    return buildSchedule(output.timeline, serve);
+    // Arredonda pro múltiplo de 10 minutos antes de ancorar no horário real
+    // — sem isso os horários absolutos caíam em minutos "quebrados" (ex:
+    // 18:23) e as durações mostradas podiam não bater com a diferença entre
+    // os horários exibidos.
+    return buildSchedule(roundTimelineForDisplay(output.timeline), serve);
   }, [output.timeline, desiredServeAt]);
 
   return (
